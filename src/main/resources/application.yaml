@@ -1,0 +1,33 @@
+spring:
+  security:
+    oauth2:
+      resourceserver:
+        jwt:
+          issuer-uri: "http://localhost:8081/realms/CostEngineering"
+
+  cloud:
+    gateway:
+      routes:
+        - id: Service1
+          uri: "http://localhost:9090"
+          predicates:
+            - Path=/service/**
+          filters:
+            - name: RequestRateLimiter
+              args:
+                redis-rate-limiter.replenishRate: 1
+                redis-rate-limiter.burstCapacity: 0
+            - name: RoleBasedRoutingFilter
+              args:
+                role: "ROLE_ADMIN"
+                uri: "http://localhost:7171"
+
+logging:
+  level:
+    reactor:
+      netty: INFO
+    redisratelimiter: DEBUG
+    org:
+      springframework:
+        cloud:
+          gateway: DEBUG
