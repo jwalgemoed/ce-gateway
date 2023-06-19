@@ -13,6 +13,8 @@ spring:
 
     gateway:
       routes:
+        # Route that has a default uri and overrides the host being routed to based on a role in the token
+        # A/B test type scenario, where you can direct traffic based on a condition
         - id: RoleBased
           uri: "http://localhost:9090"
           predicates:
@@ -26,7 +28,7 @@ spring:
               args:
                 role: "ROLE_ADMIN"
                 uri: "http://localhost:7171"
-
+        # Load balanced route, note that there's no rate limiting applied at this time.
         - id: RoundRobinLoadbalanced
           uri: "lb://cleo" # reference to the cleo instances configured below
           predicates:
