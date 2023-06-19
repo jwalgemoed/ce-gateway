@@ -5,10 +5,15 @@ spring:
         jwt:
           issuer-uri: "http://localhost:8081/realms/CostEngineering"
 
+  # Need to disable the default ribbon loadbalancer because it will interfere with gateway filtering
   cloud:
+    loadbalancer:
+      ribbon:
+        enabled: false
+
     gateway:
       routes:
-        - id: Service1
+        - id: RoleBased
           uri: "http://localhost:9090"
           predicates:
             - Path=/service/**
@@ -16,11 +21,25 @@ spring:
             - name: RequestRateLimiter
               args:
                 redis-rate-limiter.replenishRate: 1
-                redis-rate-limiter.burstCapacity: 0
+                redis-rate-limiter.burstCapacity: 1
             - name: RoleBasedRoutingFilter
               args:
                 role: "ROLE_ADMIN"
                 uri: "http://localhost:7171"
+
+        - id: RoundRobinLoadbalanced
+          uri: "lb://cleo" # reference to the cleo instances configured below
+          predicates:
+            - Path=/roundrobin/**
+
+    # Load balancer setup, configured statically, but we can also go for service discovery here if we want to get really fancy
+    discovery:
+      client:
+        simple:
+          instances:
+            cleo:
+              - uri: "http://localhost:9090"
+              - uri: "http://localhost:7171"
 
 logging:
   level:

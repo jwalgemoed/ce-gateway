@@ -31,14 +31,15 @@ class RoleBasedRoutingFilter : AbstractGatewayFilterFactory<RoleBasedRoutingFilt
             ReactiveSecurityContextHolder.getContext()
                 .map { it.authentication as JwtAuthenticationToken }
                 .flatMap { token: JwtAuthenticationToken ->
+                    // Get active route
+                    val route: Route = exchange.getAttribute(ServerWebExchangeUtils.GATEWAY_ROUTE_ATTR)!!
                     // If the role is present, use a different host (uri) to route to. Use the resolved route and only replace the host
                     if (token.hasRole(config.role)) {
-                        val route: Route = exchange.getAttribute(ServerWebExchangeUtils.GATEWAY_ROUTE_ATTR)!!
                         val newUri = exchange.attributes[GATEWAY_REQUEST_URL_ATTR].toString().replace(route.uri.toString(), config.uri)
                         LOGGER.info("User has role '${config.role}' - changing root URI to '${config.uri}' -> '${route.uri}' to ${newUri}")
                         exchange.attributes[GATEWAY_REQUEST_URL_ATTR] = URI(newUri)
                     } else {
-                        LOGGER.info("User does not have role ${config.role} - use default route.")
+                        LOGGER.info("User does not have role ${config.role} - use default route (${route.uri}).")
                     }
                     chain.filter(exchange)
                 }
